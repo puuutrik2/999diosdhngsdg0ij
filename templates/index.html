@@ -13,7 +13,7 @@
         <div class="brand__logo" aria-hidden="true"></div>
         <div class="brand__text">
           <div class="brand__title">Steam Status</div>
-          <div class="brand__sub">Похоже на Steam, но это твой сайт</div>
+          <div class="brand__sub">Чёрно‑красный чекер статуса</div>
         </div>
       </div>
       <div class="topbar__right">
@@ -34,94 +34,89 @@
     </header>
 
     <main class="wrap">
-      <section class="card">
-        <h2>Проверка профиля</h2>
-        <p class="muted">Вставь ссылку Steam (`/profiles/...` или `/id/...`) или SteamID64.</p>
+      <nav class="tabbar" aria-label="Разделы">
+        <button class="tabBtn active" type="button" data-tab="checker">Чекер</button>
+        <button class="tabBtn" type="button" data-tab="notifications">Уведомления</button>
+        <button class="tabBtn" type="button" data-tab="info">Инфо</button>
+      </nav>
 
-        <div class="row">
-          <input
-            id="steamInput"
-            placeholder="https://steamcommunity.com/profiles/7656119..."
-            autocomplete="off"
-          />
-          <button id="goBtn">Check</button>
-          <button class="btn2" id="addBtn" type="button" title="Добавить в список слежения">В список</button>
-          <button class="btn2" id="clearBtn">Clear</button>
-        </div>
+      <section class="tabPanel" data-tab="checker">
+        <section class="card">
+          <h2>Проверка профиля</h2>
+          <p class="muted">Вставь ссылку Steam (<code>/profiles/…</code> или <code>/id/…</code>) или SteamID64.</p>
 
-        <div class="controls" aria-label="Обновление">
-          <label class="control control--toggle" title="Обновлять автоматически каждые N секунд">
-            <input type="checkbox" id="autoToggle" checked />
-            <span>Авто-обновление</span>
-          </label>
-
-          <label class="control" title="Интервал обновления">
-            <span class="muted tiny">Интервал</span>
-            <select id="intervalSelect">
-              <option value="5">5с</option>
-              <option value="10">10с</option>
-              <option value="15" selected>15с</option>
-              <option value="20">20с</option>
-              <option value="25">25с</option>
-              <option value="30">30с</option>
-              <option value="35">35с</option>
-              <option value="40">40с</option>
-              <option value="45">45с</option>
-              <option value="50">50с</option>
-              <option value="55">55с</option>
-              <option value="60">60с</option>
-            </select>
-          </label>
-
-          <label class="control control--toggle" title="Ускоряет скролл: убирает blur/анимации/тяжёлые эффекты">
-            <input type="checkbox" id="perfToggle" />
-            <span>Perf</span>
-          </label>
-
-          <button class="btn2" id="refreshBtn" type="button">Обновить</button>
-          <button class="btn2" id="shareBtn" type="button" title="Скопировать ссылку вида /?steam=...">Share</button>
-        </div>
-        <div class="meta muted tiny" id="meta"></div>
-
-        <div class="result" id="result">
-          <div class="empty muted">Пока пусто. Вставь ссылку и нажми Check.</div>
-        </div>
-
-        <div class="divider"></div>
-        <div class="watchTop">
-          <div class="watchTop__title">Watchlist</div>
-          <div class="watchTop__actions">
-            <button class="btn2" id="exportBtn" type="button" title="Скачать watchlist в JSON">Export</button>
-            <label class="btn2 fileBtn" title="Загрузить watchlist из JSON">
-              Import
-              <input id="importFile" type="file" accept="application/json" />
-            </label>
-            <button class="btn2" id="watchClearBtn" type="button" title="Очистить список">Очистить</button>
+          <div class="row">
+            <input
+              id="steamInput"
+              placeholder="https://steamcommunity.com/profiles/7656119..."
+              autocomplete="off"
+            />
+            <button id="goBtn">Check</button>
+            <button class="btn2" id="addBtn" type="button" title="Добавить в watchlist">В список</button>
+            <button class="btn2" id="clearBtn">Clear</button>
           </div>
-        </div>
-        <div class="watchGrid" id="watchGrid">
-          <div class="empty muted">Список пуст. Нажми “В список”, чтобы начать следить.</div>
-        </div>
+
+          <div class="controls" aria-label="Обновление">
+            <label class="control control--toggle" title="Обновлять автоматически каждые N секунд">
+              <input type="checkbox" id="autoToggle" checked />
+              <span>Авто‑обновление</span>
+            </label>
+
+            <label class="control" title="Интервал обновления">
+              <span class="muted tiny">Интервал</span>
+              <select id="intervalSelect">
+                <option value="5">5с</option>
+                <option value="10">10с</option>
+                <option value="15" selected>15с</option>
+                <option value="20">20с</option>
+                <option value="25">25с</option>
+                <option value="30">30с</option>
+                <option value="35">35с</option>
+                <option value="40">40с</option>
+                <option value="45">45с</option>
+                <option value="50">50с</option>
+                <option value="55">55с</option>
+                <option value="60">60с</option>
+              </select>
+            </label>
+
+            <label class="control control--toggle" title="Ускоряет скролл: убирает blur/анимации/тяжёлые эффекты">
+              <input type="checkbox" id="perfToggle" />
+              <span>Perf</span>
+            </label>
+
+            <button class="btn2" id="refreshBtn" type="button">Обновить</button>
+            <button class="btn2" id="shareBtn" type="button" title="Скопировать ссылку вида /?steam=...">Share</button>
+          </div>
+          <div class="meta muted tiny" id="meta"></div>
+
+          <div class="result" id="result">
+            <div class="empty muted">Пока пусто. Вставь ссылку и нажми Check.</div>
+          </div>
+
+          <div class="divider"></div>
+          <div class="watchTop">
+            <div class="watchTop__title">Watchlist</div>
+            <div class="watchTop__actions">
+              <button class="btn2" id="exportBtn" type="button" title="Скачать watchlist в JSON">Export</button>
+              <label class="btn2 fileBtn" title="Загрузить watchlist из JSON">
+                Import
+                <input id="importFile" type="file" accept="application/json" />
+              </label>
+              <button class="btn2" id="watchClearBtn" type="button" title="Очистить список">Очистить</button>
+            </div>
+          </div>
+          <div class="watchGrid" id="watchGrid">
+            <div class="empty muted">Список пуст. Нажми “В список”, чтобы начать следить.</div>
+          </div>
+        </section>
       </section>
 
-      <section class="side">
-        <div class="hint">
-          <div class="hint__title">Что показывается?</div>
-          <ul>
-            <li>Ник и аватар</li>
-            <li>Онлайн-статус</li>
-            <li>Игра (если Steam отдаёт)</li>
-          </ul>
-          <div class="muted tiny">
-            Приватность не обходится: если Steam скрывает данные, сайт их не “вытащит”.
-          </div>
-          <div class="muted tiny" style="margin-top: 10px">
-            Время “захода/выхода” — <b>обнаружено сайтом</b> по обновлениям (примерно), Steam точное время не отдаёт.
-          </div>
-        </div>
+      <section class="tabPanel" data-tab="notifications" hidden>
+        <section class="card">
+          <h2>Уведомления</h2>
+          <p class="muted tiny">Срабатывают при смене статуса/игры по обновлениям (примерно).</p>
 
-        <div class="hint">
-          <div class="hint__title">Уведомления</div>
           <div class="sideControls">
             <label class="control control--toggle">
               <input type="checkbox" id="notifToggle" />
@@ -132,6 +127,7 @@
               <span>Звук</span>
             </label>
           </div>
+
           <div class="field">
             <div class="muted tiny">Discord webhook (опц.)</div>
             <input id="webhookInput" placeholder="https://discord.com/api/webhooks/..." autocomplete="off" />
@@ -140,33 +136,26 @@
               <span>Отправлять в Discord</span>
             </label>
             <div class="muted tiny" style="margin-top: 8px">
-              Важно: webhook — это секрет. Не выкладывай его публично.
+              Важно: webhook — секрет. Не выкладывай его публично.
             </div>
           </div>
-        </div>
+        </section>
+      </section>
 
-        <div class="hint">
-          <div class="hint__title">История</div>
-          <div class="history" id="history"></div>
-          <div style="margin-top: 10px">
-            <button class="btn2" id="clearHistoryBtn" type="button">Очистить историю</button>
+      <section class="tabPanel" data-tab="info" hidden>
+        <section class="card">
+          <h2>Инфо</h2>
+          <ul>
+            <li>Ник и аватар</li>
+            <li>Онлайн‑статус</li>
+            <li>Игра (если Steam отдаёт)</li>
+            <li>AppID + ссылка на магазин</li>
+            <li>“В сети с / вышел” — обнаружено сайтом по обновлениям</li>
+          </ul>
+          <div class="muted tiny" style="margin-top: 10px">
+            Приватность не обходится: если Steam скрывает данные, сайт их не “вытянет”.
           </div>
-        </div>
-
-        <div class="hint">
-          <div class="hint__title">Тема</div>
-          <div class="field">
-            <div class="muted tiny">Accent</div>
-            <input class="colorInput" id="accentColor" type="color" />
-          </div>
-          <div class="field">
-            <div class="muted tiny">Ник/игра (hot)</div>
-            <input class="colorInput" id="hotColor" type="color" />
-          </div>
-          <div style="margin-top: 10px">
-            <button class="btn2" id="resetThemeBtn" type="button">Сбросить</button>
-          </div>
-        </div>
+        </section>
       </section>
     </main>
 

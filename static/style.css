@@ -1,22 +1,22 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap");
 
 :root {
-  --steam-bg: #0b131e;
-  --steam-bg2: #111b29;
-  --steam-panel: rgba(24, 34, 50, 0.75);
-  --steam-panel2: rgba(24, 34, 50, 0.92);
-  --steam-border: rgba(255, 255, 255, 0.12);
+  --steam-bg: #07070a;
+  --steam-bg2: #0f0f14;
+  --steam-panel: rgba(20, 20, 26, 0.78);
+  --steam-panel2: rgba(20, 20, 26, 0.94);
+  --steam-border: rgba(255, 255, 255, 0.10);
   --steam-text: rgba(255, 255, 255, 0.92);
   --steam-muted: rgba(255, 255, 255, 0.62);
-  --steam-accent: #66c0f4;
-  --steam-accent2: #1b5f86;
+  --steam-accent: #ff4d4d;
+  --steam-accent2: #7a1b1b;
   --ok: #59d17d;
   --bad: #9aa7b5;
   --warn: #ffbf3c;
   --busy: #ff5d7a;
   --hot: #ff4d4d;
   --trade: #66c0f4;
-  --shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+  --shadow: 0 16px 50px rgba(0, 0, 0, 0.42);
 }
 
 * {
@@ -31,8 +31,8 @@ body {
 body {
   margin: 0;
   font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-  background: radial-gradient(1200px 800px at 20% 15%, rgba(102, 192, 244, 0.18), transparent 60%),
-    radial-gradient(1100px 700px at 80% 35%, rgba(27, 95, 134, 0.22), transparent 55%),
+  background: radial-gradient(1200px 800px at 20% 15%, rgba(255, 77, 77, 0.16), transparent 60%),
+    radial-gradient(1100px 700px at 80% 35%, rgba(255, 77, 77, 0.10), transparent 55%),
     linear-gradient(180deg, var(--steam-bg), var(--steam-bg2));
   color: var(--steam-text);
   padding: 26px 14px 70px;
@@ -41,8 +41,8 @@ body {
 .bg {
   position: fixed;
   inset: 0;
-  background: radial-gradient(800px 500px at 30% 80%, rgba(102, 192, 244, 0.12), transparent 60%),
-    radial-gradient(700px 500px at 70% 10%, rgba(27, 95, 134, 0.16), transparent 60%);
+  background: radial-gradient(800px 500px at 30% 80%, rgba(255, 77, 77, 0.10), transparent 60%),
+    radial-gradient(700px 500px at 70% 10%, rgba(255, 77, 77, 0.08), transparent 60%);
   pointer-events: none;
   filter: blur(0px);
 }
@@ -96,7 +96,7 @@ body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  border-bottom: 1px dashed rgba(102, 192, 244, 0.45);
+  border-bottom: 1px dashed rgba(255, 77, 77, 0.45);
 }
 
 .me__name:hover {
@@ -113,7 +113,7 @@ body {
   width: 44px;
   height: 44px;
   border-radius: 14px;
-  background: radial-gradient(circle at 35% 30%, rgba(102, 192, 244, 0.92), rgba(27, 95, 134, 0.55));
+  background: radial-gradient(circle at 35% 30%, rgba(255, 77, 77, 0.92), rgba(122, 27, 27, 0.55));
   position: relative;
   overflow: hidden;
 }
@@ -171,10 +171,35 @@ body {
   gap: 14px;
 }
 
-@media (min-width: 960px) {
-  .wrap {
-    grid-template-columns: 1.08fr 0.92fr;
-  }
+.tabbar {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+button.tabBtn {
+  padding: 10px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--steam-border);
+  background: rgba(0, 0, 0, 0.18);
+  color: var(--steam-text);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.2px;
+  transition: transform 0.08s ease, filter 0.08s ease, background 0.12s ease, border-color 0.12s ease;
+}
+
+button.tabBtn.active {
+  border-color: rgba(255, 77, 77, 0.55);
+  background: linear-gradient(180deg, rgba(255, 77, 77, 0.18), rgba(255, 77, 77, 0.06));
+  color: rgba(255, 210, 210, 0.98);
+}
+
+button.tabBtn:active {
+  transform: translateY(1px);
+  filter: brightness(0.95);
 }
 
 .card {
@@ -327,8 +352,8 @@ input::placeholder {
 button {
   padding: 11px 14px;
   border-radius: 12px;
-  border: 1px solid rgba(102, 192, 244, 0.42);
-  background: linear-gradient(180deg, rgba(102, 192, 244, 0.25), rgba(27, 95, 134, 0.18));
+  border: 1px solid rgba(255, 77, 77, 0.42);
+  background: linear-gradient(180deg, rgba(255, 77, 77, 0.22), rgba(122, 27, 27, 0.14));
   color: var(--steam-text);
   cursor: pointer;
   transition: transform 0.08s ease, filter 0.08s ease;
@@ -587,7 +612,7 @@ button:active {
 .link {
   color: var(--steam-accent);
   text-decoration: none;
-  border-bottom: 1px dashed rgba(102, 192, 244, 0.45);
+  border-bottom: 1px dashed rgba(255, 77, 77, 0.45);
 }
 
 .link:hover {
@@ -606,8 +631,8 @@ button:active {
 .actionBtn {
   padding: 10px 12px;
   border-radius: 12px;
-  border: 1px solid rgba(102, 192, 244, 0.40);
-  background: linear-gradient(180deg, rgba(102, 192, 244, 0.18), rgba(27, 95, 134, 0.14));
+  border: 1px solid rgba(255, 77, 77, 0.40);
+  background: linear-gradient(180deg, rgba(255, 77, 77, 0.16), rgba(122, 27, 27, 0.10));
   color: var(--steam-text);
   text-decoration: none;
   font-size: 12px;

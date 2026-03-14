@@ -5,16 +5,14 @@ const STORAGE = {
   auto: "steamStatusSite:auto",
   intervalSec: "steamStatusSite:intervalSec",
   perf: "steamStatusSite:perf",
+  tab: "steamStatusSite:tab",
   watchlist: "steamStatusSite:watchlist",
   presencePrefix: "steamStatusSite:presence:",
   snapshotPrefix: "steamStatusSite:snap:",
-  history: "steamStatusSite:history",
   notif: "steamStatusSite:notif",
   sound: "steamStatusSite:sound",
   webhookUrl: "steamStatusSite:webhookUrl",
   webhookEnabled: "steamStatusSite:webhookEnabled",
-  themeAccent: "steamStatusSite:themeAccent",
-  themeHot: "steamStatusSite:themeHot",
 };
 
 const safeJsonParse = (value) => {
@@ -117,6 +115,35 @@ const toast = (msg) => {
   t.textContent = msg;
   t.classList.add("show");
   setTimeout(() => t.classList.remove("show"), 2600);
+};
+
+const TABS = new Set(["checker", "notifications", "info"]);
+
+const normalizeTab = (tab) => {
+  const t = String(tab || "").trim();
+  return TABS.has(t) ? t : "checker";
+};
+
+const setActiveTab = (tab) => {
+  const t = normalizeTab(tab);
+  safeStorageSet(STORAGE.tab, t);
+
+  for (const btn of document.querySelectorAll(".tabBtn")) {
+    const active = String(btn?.dataset?.tab || "") === t;
+    btn.classList.toggle("active", active);
+  }
+
+  for (const panel of document.querySelectorAll(".tabPanel")) {
+    const active = String(panel?.dataset?.tab || "") === t;
+    if (active) panel.removeAttribute("hidden");
+    else panel.setAttribute("hidden", "");
+  }
+};
+
+const initTabs = () => {
+  for (const btn of document.querySelectorAll(".tabBtn")) {
+    btn.addEventListener("click", () => setActiveTab(btn.dataset?.tab));
+  }
 };
 
 const setPill = (state, text) => {
@@ -710,12 +737,10 @@ const detectEvents = (p) => {
 const handleEvents = async (events) => {
   if (!events.length) return;
   for (const evt of events) {
-    pushHistory(evt);
     notifyBrowser(evt.text, evt.text, evt.icon);
     await playBeep();
     await sendDiscordWebhook(evt.text);
   }
-  renderHistory();
 };
 
 // ---- Theme ----
@@ -800,7 +825,8 @@ const updatePlayDurations = () => {
   if (document.body?.classList?.contains("scrolling")) return;
   cleanupPlayDurationNodes();
   const now = Date.now();
-  const spans = visiblePlayDurationNodes.size ? visiblePlayDurationNodes : playDurationNodes;
+  const spans = playDurationObserver ? visiblePlayDurationNodes : playDurationNodes;
+  if (!spans.size) return;
   for (const span of spans) {
     const start = Number(span?.dataset?.start);
     if (!isFinite(start) || start <= 0) continue;
@@ -1291,12 +1317,11 @@ el("perfToggle")?.addEventListener("change", (e) => {
   const savedInterval = localStorage.getItem(STORAGE.intervalSec);
   const savedSteam = localStorage.getItem(STORAGE.lastSteam);
   const savedPerf = safeStorageGet(STORAGE.perf);
+  const savedTab = safeStorageGet(STORAGE.tab);
   const savedNotif = localStorage.getItem(STORAGE.notif);
   const savedSound = localStorage.getItem(STORAGE.sound);
   const savedWebhookUrl = localStorage.getItem(STORAGE.webhookUrl);
   const savedWebhookEnabled = localStorage.getItem(STORAGE.webhookEnabled);
-  const savedThemeAccent = localStorage.getItem(STORAGE.themeAccent);
-  const savedThemeHot = localStorage.getItem(STORAGE.themeHot);
 
   autoEnabled = savedAuto === null ? true : savedAuto === "1";
   intervalSec = clampInterval(savedInterval ?? 15);
@@ -1319,6 +1344,9 @@ el("perfToggle")?.addEventListener("change", (e) => {
   if (perfToggle) perfToggle.checked = defaultPerf;
   applyPerf(defaultPerf);
 
+  initTabs();
+  setActiveTab(savedTab || "checker");
+
   notifEnabled = savedNotif === "1";
   soundEnabled = savedSound === "1";
   webhookUrl = String(savedWebhookUrl || "");
@@ -1332,17 +1360,6 @@ el("perfToggle")?.addEventListener("change", (e) => {
   if (webhookInput) webhookInput.value = webhookUrl;
   const webhookToggle = el("webhookToggle");
   if (webhookToggle) webhookToggle.checked = webhookEnabled;
-
-  themeAccent = String(savedThemeAccent || "");
-  themeHot = String(savedThemeHot || "");
-  applyTheme();
-  const accentColor = el("accentColor");
-  if (accentColor) accentColor.value = themeAccent || DEFAULT_ACCENT;
-  const hotColor = el("hotColor");
-  if (hotColor) hotColor.value = themeHot || DEFAULT_HOT;
-
-  history = loadHistory();
-  renderHistory();
 
   watchlist = loadWatchlist();
   renderWatchGrid(new Map());
