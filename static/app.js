@@ -4,6 +4,7 @@ const STORAGE = {
   lastSteam: "steamStatusSite:lastSteam",
   auto: "steamStatusSite:auto",
   intervalSec: "steamStatusSite:intervalSec",
+  perf: "steamStatusSite:perf",
   watchlist: "steamStatusSite:watchlist",
   presencePrefix: "steamStatusSite:presence:",
   snapshotPrefix: "steamStatusSite:snap:",
@@ -40,6 +41,75 @@ const safeStorageSet = (key, value) => {
 
 const presenceCache = new Map();
 const snapshotCache = new Map();
+
+let perfEnabled = false;
+
+const applyPerf = (enabled) => {
+  perfEnabled = Boolean(enabled);
+  document.body.classList.toggle("perf", perfEnabled);
+};
+
+let scrollTimeout = null;
+const startScrollMode = () => {
+  if (!document.body) return;
+  document.body.classList.add("scrolling");
+  if (scrollTimeout) clearTimeout(scrollTimeout);
+  scrollTimeout = setTimeout(() => document.body.classList.remove("scrolling"), 140);
+};
+
+const playDurationNodes = new Set();
+const visiblePlayDurationNodes = new Set();
+let playDurationObserver = null;
+
+const ensurePlayDurationObserver = () => {
+  if (playDurationObserver) return playDurationObserver;
+  if (typeof IntersectionObserver === "undefined") return null;
+  playDurationObserver = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        const node = entry.target;
+        if (entry.isIntersecting) visiblePlayDurationNodes.add(node);
+        else visiblePlayDurationNodes.delete(node);
+      }
+    },
+    { root: null, rootMargin: "220px", threshold: 0 }
+  );
+  return playDurationObserver;
+};
+
+const rebuildPlayDurationNodes = () => {
+  try {
+    if (playDurationObserver) {
+      for (const node of playDurationNodes) playDurationObserver.unobserve(node);
+    }
+  } catch {}
+  playDurationNodes.clear();
+  visiblePlayDurationNodes.clear();
+
+  const nodes = document.querySelectorAll(".playDuration");
+  for (const node of nodes) {
+    if (!(node instanceof Element)) continue;
+    playDurationNodes.add(node);
+  }
+
+  const io = ensurePlayDurationObserver();
+  if (!io) return;
+  for (const node of playDurationNodes) io.observe(node);
+};
+
+const cleanupPlayDurationNodes = () => {
+  const toDelete = [];
+  for (const node of playDurationNodes) {
+    if (!node.isConnected) toDelete.push(node);
+  }
+  for (const node of toDelete) {
+    playDurationNodes.delete(node);
+    visiblePlayDurationNodes.delete(node);
+    try {
+      playDurationObserver?.unobserve(node);
+    } catch {}
+  }
+};
 
 const toast = (msg) => {
   const t = el("toast");
@@ -302,7 +372,7 @@ const renderProfile = (p, meta = null, opts = {}) => {
   row.dataset.sid = String(p.steamid64 || "");
   row.dataset.key = renderKey(p, meta);
 
-  if (p.gameid) {
+  if (p.gameid && opts?.showHero !== false && !perfEnabled) {
     const hero = document.createElement("div");
     hero.className = "gameHero";
     hero.style.backgroundImage = `url(https://cdn.cloudflare.steamstatic.com/steam/apps/${p.gameid}/header.jpg)`;
@@ -727,11 +797,15 @@ const refreshMeta = (updatedAt = null) => {
 };
 
 const updatePlayDurations = () => {
-  const spans = document.querySelectorAll(".playDuration");
+  if (document.body?.classList?.contains("scrolling")) return;
+  cleanupPlayDurationNodes();
+  const now = Date.now();
+  const spans = visiblePlayDurationNodes.size ? visiblePlayDurationNodes : playDurationNodes;
   for (const span of spans) {
-    const start = Number(span.dataset?.start);
+    const start = Number(span?.dataset?.start);
     if (!isFinite(start) || start <= 0) continue;
-    span.textContent = fmtDuration(Date.now() - start);
+    const next = fmtDuration(now - start);
+    if (span.textContent !== next) span.textContent = next;
   }
 };
 
@@ -746,6 +820,7 @@ const renderPreview = (data, presence) => {
   const existing = result.querySelector?.(".profile");
   if (existing && existing.dataset?.sid === String(data.steamid64 || "") && existing.dataset?.key === key) return;
   result.replaceChildren(renderProfile(data, presence));
+  rebuildPlayDurationNodes();
 };
 
 const renderWatchGrid = (playersById) => {
@@ -781,10 +856,11 @@ const renderWatchGrid = (playersById) => {
     if (old && old.dataset?.key === key) {
       frag.appendChild(old);
     } else {
-      frag.appendChild(renderProfile(p, presence, { onRemove: (sid) => removeFromWatchlist(sid) }));
+      frag.appendChild(renderProfile(p, presence, { onRemove: (sid) => removeFromWatchlist(sid), showHero: false }));
     }
   }
   grid.replaceChildren(frag);
+  rebuildPlayDurationNodes();
 };
 
 // ---- API ----
@@ -1203,11 +1279,18 @@ el("intervalSelect")?.addEventListener("change", (e) => {
   refreshMeta();
 });
 
+el("perfToggle")?.addEventListener("change", (e) => {
+  const enabled = Boolean(e.target?.checked);
+  safeStorageSet(STORAGE.perf, enabled ? "1" : "0");
+  applyPerf(enabled);
+});
+
 // ---- Init ----
 (() => {
   const savedAuto = localStorage.getItem(STORAGE.auto);
   const savedInterval = localStorage.getItem(STORAGE.intervalSec);
   const savedSteam = localStorage.getItem(STORAGE.lastSteam);
+  const savedPerf = safeStorageGet(STORAGE.perf);
   const savedNotif = localStorage.getItem(STORAGE.notif);
   const savedSound = localStorage.getItem(STORAGE.sound);
   const savedWebhookUrl = localStorage.getItem(STORAGE.webhookUrl);
@@ -1222,6 +1305,19 @@ el("intervalSelect")?.addEventListener("change", (e) => {
   if (autoToggle) autoToggle.checked = autoEnabled;
   const intervalSelect = el("intervalSelect");
   if (intervalSelect) intervalSelect.value = String(intervalSec);
+
+  const perfToggle = el("perfToggle");
+  const defaultPerf = (() => {
+    if (savedPerf === "1") return true;
+    if (savedPerf === "0") return false;
+    try {
+      return Boolean(window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches);
+    } catch {
+      return false;
+    }
+  })();
+  if (perfToggle) perfToggle.checked = defaultPerf;
+  applyPerf(defaultPerf);
 
   notifEnabled = savedNotif === "1";
   soundEnabled = savedSound === "1";
@@ -1265,10 +1361,13 @@ el("intervalSelect")?.addEventListener("change", (e) => {
   if (!tickTimer) {
     tickTimer = setInterval(() => {
       if (document.hidden) return;
+      if (document.body?.classList?.contains("scrolling")) return;
       refreshMeta();
       updatePlayDurations();
     }, 1000);
   }
+
+  window.addEventListener("scroll", startScrollMode, { passive: true });
 
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) {

@@ -777,3 +777,92 @@ button:active {
     opacity: 1;
   }
 }
+
+/* Smooth scrolling: disable expensive effects while scrolling */
+body.scrolling .topbar,
+body.scrolling .card,
+body.scrolling .hint,
+body.scrolling .toast {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: none;
+}
+
+body.scrolling .brand__logo::after,
+body.scrolling .profile.appear,
+body.scrolling .sk,
+body.scrolling .toast.show {
+  animation: none;
+}
+
+body.scrolling button,
+body.scrolling .actionBtn {
+  transition: none;
+}
+
+body.scrolling .dot,
+body.scrolling .s {
+  box-shadow: none;
+}
+
+body.scrolling .bg {
+  display: none;
+}
+
+body.scrolling .gameHero {
+  display: none;
+}
+
+/* Performance mode toggle (always-on) */
+body.perf {
+  background: linear-gradient(180deg, var(--steam-bg), var(--steam-bg2));
+}
+
+body.perf .bg {
+  display: none;
+}
+
+body.perf .topbar,
+body.perf .card,
+body.perf .hint,
+body.perf .toast {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: none;
+  background: rgba(17, 27, 41, 0.92);
+}
+
+body.perf .brand__logo::after,
+body.perf .profile.appear,
+body.perf .sk,
+body.perf .toast.show {
+  animation: none;
+}
+
+body.perf button,
+body.perf .actionBtn {
+  transition: none;
+}
+
+body.perf .dot,
+body.perf .s {
+  box-shadow: none;
+}
+
+body.perf .gameHero {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brand__logo::after,
+  .profile.appear,
+  .sk,
+  .toast.show {
+    animation: none;
+  }
+
+  button,
+  .actionBtn {
+    transition: none;
+  }
+}
