@@ -283,6 +283,8 @@ select {
   border-radius: 12px;
   background: rgba(0, 0, 0, 0.10);
   padding: 10px 10px;
+  content-visibility: auto;
+  contain-intrinsic-size: 64px;
 }
 
 .historyTime {
@@ -393,6 +395,8 @@ button:active {
   background: linear-gradient(180deg, rgba(24, 34, 50, 0.92), rgba(0, 0, 0, 0.18));
   position: relative;
   overflow: hidden;
+  content-visibility: auto;
+  contain-intrinsic-size: 130px;
 }
 
 .gameHero {

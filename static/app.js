@@ -24,6 +24,23 @@ const safeJsonParse = (value) => {
   }
 };
 
+const safeStorageGet = (key) => {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+};
+
+const safeStorageSet = (key, value) => {
+  try {
+    localStorage.setItem(key, value);
+  } catch {}
+};
+
+const presenceCache = new Map();
+const snapshotCache = new Map();
+
 const toast = (msg) => {
   const t = el("toast");
   if (!t) return;
@@ -170,38 +187,80 @@ const clampInterval = (s) => {
 };
 
 const getPresenceKey = (steamid64) => `${STORAGE.presencePrefix}${steamid64}`;
+const getSnapshotKey = (steamid64) => `${STORAGE.snapshotPrefix}${steamid64}`;
+
+const getCachedPresence = (steamid64) => {
+  const sid = String(steamid64 || "").trim();
+  if (!sid) return null;
+  if (presenceCache.has(sid)) return presenceCache.get(sid);
+  const raw = safeStorageGet(getPresenceKey(sid));
+  const parsed = raw ? safeJsonParse(raw) : null;
+  if (parsed && typeof parsed === "object") {
+    presenceCache.set(sid, parsed);
+    return parsed;
+  }
+  return null;
+};
+
+const setCachedPresence = (steamid64, value, persist) => {
+  const sid = String(steamid64 || "").trim();
+  if (!sid) return;
+  presenceCache.set(sid, value);
+  if (persist) safeStorageSet(getPresenceKey(sid), JSON.stringify(value));
+};
+
+const getCachedSnapshot = (steamid64) => {
+  const sid = String(steamid64 || "").trim();
+  if (!sid) return null;
+  if (snapshotCache.has(sid)) return snapshotCache.get(sid);
+  const raw = safeStorageGet(getSnapshotKey(sid));
+  const parsed = raw ? safeJsonParse(raw) : null;
+  if (parsed && typeof parsed === "object") {
+    snapshotCache.set(sid, parsed);
+    return parsed;
+  }
+  return null;
+};
+
+const setCachedSnapshot = (steamid64, value, persist) => {
+  const sid = String(steamid64 || "").trim();
+  if (!sid) return;
+  snapshotCache.set(sid, value);
+  if (persist) safeStorageSet(getSnapshotKey(sid), JSON.stringify(value));
+};
 
 const updatePresenceMeta = (p) => {
   const steamid64 = String(p?.steamid64 || "");
   if (!steamid64) return null;
 
   const now = Date.now();
-  const key = getPresenceKey(steamid64);
-  const prev = safeJsonParse(localStorage.getItem(key) || "null") || {};
+  const prev = getCachedPresence(steamid64) || {};
   const prevOnline = typeof prev.online === "boolean" ? prev.online : null;
   const currentOnline = Number(p.personastate ?? 0) !== 0;
 
   let detectedOnlineAt = typeof prev.detectedOnlineAt === "number" ? prev.detectedOnlineAt : null;
   let detectedOfflineAt = typeof prev.detectedOfflineAt === "number" ? prev.detectedOfflineAt : null;
 
+  let persist = false;
   if (prevOnline === null) {
     if (currentOnline) detectedOnlineAt = now;
     else detectedOfflineAt = now;
   } else if (prevOnline !== currentOnline) {
+    persist = true;
     if (currentOnline) detectedOnlineAt = now;
     else detectedOfflineAt = now;
   }
 
-  const next = {
+  const stored = {
     online: currentOnline,
     detectedOnlineAt,
     detectedOfflineAt,
-    updatedAt: now,
   };
-  localStorage.setItem(key, JSON.stringify(next));
-  const snap = safeJsonParse(localStorage.getItem(getSnapshotKey(steamid64)) || "null") || {};
+  setCachedPresence(steamid64, stored, persist);
+
+  const snap = getCachedSnapshot(steamid64) || {};
   const gameStartAt = typeof snap.gameStartAt === "number" ? snap.gameStartAt : null;
-  return { ...next, gameStartAt };
+  return { ...stored, updatedAt: now, gameStartAt };
 };
 
 const mkDetail = (label, valueNode) => {
@@ -219,9 +278,29 @@ const mkDetail = (label, valueNode) => {
   return d;
 };
 
+const renderKey = (p, meta) => {
+  const avatarUrl = p.avatarfull || p.avatarmedium || p.avatar || "";
+  return [
+    String(p.steamid64 || ""),
+    String(p.personaname || ""),
+    String(avatarUrl),
+    String(p.personastate ?? ""),
+    String(p.personastate_label || ""),
+    String(p.gameid || ""),
+    String(p.gameextrainfo || ""),
+    String(p.lastlogoff || ""),
+    String(p.loccountrycode || ""),
+    String(meta?.detectedOnlineAt || ""),
+    String(meta?.detectedOfflineAt || ""),
+    String(meta?.gameStartAt || ""),
+  ].join("|");
+};
+
 const renderProfile = (p, meta = null, opts = {}) => {
   const row = document.createElement("div");
   row.className = "profile appear";
+  row.dataset.sid = String(p.steamid64 || "");
+  row.dataset.key = renderKey(p, meta);
 
   if (p.gameid) {
     const hero = document.createElement("div");
@@ -233,6 +312,8 @@ const renderProfile = (p, meta = null, opts = {}) => {
   const avatar = document.createElement("div");
   avatar.className = "avatar";
   const img = document.createElement("img");
+  img.loading = "lazy";
+  img.decoding = "async";
   img.src = p.avatarfull || p.avatarmedium || p.avatar || "";
   img.alt = "avatar";
   avatar.appendChild(img);
@@ -319,10 +400,6 @@ const renderProfile = (p, meta = null, opts = {}) => {
     if (v) details.appendChild(mkDetail("Вышел (обнаружено)", v));
   }
 
-  if (meta?.updatedAt) {
-    details.appendChild(mkDetail("Обновлено", new Date(meta.updatedAt).toLocaleString()));
-  }
-
   if (p.gameid) {
     const appLine = document.createElement("div");
     appLine.className = "idline";
@@ -395,8 +472,6 @@ let soundEnabled = false;
 let webhookUrl = "";
 let webhookEnabled = false;
 let audioCtx = null;
-
-const getSnapshotKey = (steamid64) => `${STORAGE.snapshotPrefix}${steamid64}`;
 
 const loadHistory = () => {
   const raw = safeJsonParse(localStorage.getItem(STORAGE.history) || "[]");
@@ -492,8 +567,7 @@ const detectEvents = (p) => {
     personaname: p.personaname ? String(p.personaname) : sid,
   };
 
-  const key = getSnapshotKey(sid);
-  const prev = safeJsonParse(localStorage.getItem(key) || "null");
+  const prev = getCachedSnapshot(sid);
   const prevGameKey = prev ? String(prev.gameid || prev.game || "") : "";
   const curGameKey = String(current.gameid || current.game || "");
   const wasPlaying = Boolean(prevGameKey);
@@ -501,12 +575,16 @@ const detectEvents = (p) => {
 
   let gameStartAt = null;
   if (isPlaying) {
-    if (prevGameKey && prevGameKey === curGameKey && typeof prev.gameStartAt === "number") gameStartAt = prev.gameStartAt;
+    if (prevGameKey && prevGameKey === curGameKey && typeof prev?.gameStartAt === "number") gameStartAt = prev.gameStartAt;
     else gameStartAt = now;
   }
 
-  const next = { ...current, gameStartAt, lastSeenAt: now };
-  localStorage.setItem(key, JSON.stringify(next));
+  const next = { ...current, gameStartAt };
+  const changed =
+    (typeof prev?.online === "boolean" && prev.online !== current.online) ||
+    prevGameKey !== curGameKey ||
+    String(prev?.personaname || "") !== current.personaname;
+  setCachedSnapshot(sid, next, Boolean(prev) && changed);
   if (!prev) return [];
 
   const events = [];
@@ -664,8 +742,10 @@ const renderPreview = (data, presence) => {
     result.innerHTML = `<div class="empty muted">Пока пусто. Вставь ссылку и нажми Check.</div>`;
     return;
   }
-  result.innerHTML = "";
-  result.appendChild(renderProfile(data, presence));
+  const key = renderKey(data, presence);
+  const existing = result.querySelector?.(".profile");
+  if (existing && existing.dataset?.sid === String(data.steamid64 || "") && existing.dataset?.key === key) return;
+  result.replaceChildren(renderProfile(data, presence));
 };
 
 const renderWatchGrid = (playersById) => {
@@ -682,16 +762,29 @@ const renderWatchGrid = (playersById) => {
     return;
   }
 
-  grid.innerHTML = "";
+  const existingById = new Map();
+  for (const child of Array.from(grid.children || [])) {
+    const sid = child?.dataset?.sid;
+    if (sid) existingById.set(String(sid), child);
+  }
+
+  const frag = document.createDocumentFragment();
   for (const item of watchlist) {
     const p = playersById?.get?.(item.steamid64);
     if (!p) {
-      grid.appendChild(renderMissing(item.steamid64));
+      frag.appendChild(renderMissing(item.steamid64));
       continue;
     }
     const presence = updatePresenceMeta(p);
-    grid.appendChild(renderProfile(p, presence, { onRemove: (sid) => removeFromWatchlist(sid) }));
+    const key = renderKey(p, presence);
+    const old = existingById.get(String(item.steamid64));
+    if (old && old.dataset?.key === key) {
+      frag.appendChild(old);
+    } else {
+      frag.appendChild(renderProfile(p, presence, { onRemove: (sid) => removeFromWatchlist(sid) }));
+    }
   }
+  grid.replaceChildren(frag);
 };
 
 // ---- API ----
@@ -773,7 +866,7 @@ const refreshActive = async ({ fresh, quiet, fromAuto }) => {
   inFlight = true;
 
   if (!quiet) setPill("warn", "loading…");
-  else setPill("warn", "обновляю…");
+  else if (!fromAuto) setPill("warn", "обновляю…");
 
   if (!quiet) renderWatchGrid(new Map());
 
@@ -1171,6 +1264,7 @@ el("intervalSelect")?.addEventListener("change", (e) => {
 
   if (!tickTimer) {
     tickTimer = setInterval(() => {
+      if (document.hidden) return;
       refreshMeta();
       updatePlayDurations();
     }, 1000);

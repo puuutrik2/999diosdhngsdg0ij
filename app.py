@@ -32,6 +32,7 @@ CACHE_TTL_SECONDS = int((os.getenv("CACHE_TTL_SECONDS") or "15").strip() or "15"
 STEAM_PLAYER_SUMMARIES_URL = "https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/"
 STEAM_RESOLVE_VANITY_URL = "https://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/"
 STEAM_OPENID_URL = "https://steamcommunity.com/openid/login"
+HTTP_TIMEOUT = aiohttp.ClientTimeout(total=15)
 
 
 def _personastate_label(personastate: int | None) -> str:
@@ -83,7 +84,7 @@ def _extract_steam_identifier(value: str) -> tuple[str, Literal["steamid64", "va
 
 async def resolve_vanity_url(session: aiohttp.ClientSession, vanity: str) -> str | None:
     params = {"key": STEAM_API_KEY, "vanityurl": vanity}
-    async with session.get(STEAM_RESOLVE_VANITY_URL, params=params, timeout=aiohttp.ClientTimeout(total=15)) as resp:
+    async with session.get(STEAM_RESOLVE_VANITY_URL, params=params) as resp:
         data = await resp.json()
     response = data.get("response", {})
     if not isinstance(response, dict):
@@ -96,7 +97,7 @@ async def resolve_vanity_url(session: aiohttp.ClientSession, vanity: str) -> str
 
 async def get_player_summary(session: aiohttp.ClientSession, steamid64: str) -> dict[str, Any] | None:
     params = {"key": STEAM_API_KEY, "steamids": steamid64}
-    async with session.get(STEAM_PLAYER_SUMMARIES_URL, params=params, timeout=aiohttp.ClientTimeout(total=15)) as resp:
+    async with session.get(STEAM_PLAYER_SUMMARIES_URL, params=params) as resp:
         data = await resp.json()
     players = data.get("response", {}).get("players", [])
     if not isinstance(players, list) or not players:
@@ -112,7 +113,7 @@ async def get_player_summaries(session: aiohttp.ClientSession, steamid64s: list[
     # Steam API supports up to 100 steamids per call.
     steamid64s = steamid64s[:100]
     params = {"key": STEAM_API_KEY, "steamids": ",".join(steamid64s)}
-    async with session.get(STEAM_PLAYER_SUMMARIES_URL, params=params, timeout=aiohttp.ClientTimeout(total=15)) as resp:
+    async with session.get(STEAM_PLAYER_SUMMARIES_URL, params=params) as resp:
         data = await resp.json()
     players = data.get("response", {}).get("players", [])
     if not isinstance(players, list):
@@ -153,6 +154,19 @@ app = FastAPI()
 app.add_middleware(SessionMiddleware, secret_key=SESSION_SECRET, same_site="lax")
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
+
+
+@app.on_event("startup")
+async def _startup() -> None:
+    connector = aiohttp.TCPConnector(limit=200, ttl_dns_cache=300)
+    app.state.http = aiohttp.ClientSession(timeout=HTTP_TIMEOUT, connector=connector)
+
+
+@app.on_event("shutdown")
+async def _shutdown() -> None:
+    session: aiohttp.ClientSession | None = getattr(app.state, "http", None)
+    if session and not session.closed:
+        await session.close()
 
 
 def _base_url(request: Request) -> str:
@@ -212,23 +226,23 @@ async def auth_steam_callback(request: Request) -> RedirectResponse:
     check = dict(qp)
     check["openid.mode"] = "check_authentication"
 
-    async with aiohttp.ClientSession() as session:
-        async with session.post(STEAM_OPENID_URL, data=check, timeout=aiohttp.ClientTimeout(total=15)) as resp:
-            text = await resp.text()
-        if "is_valid:true" not in text:
-            raise HTTPException(status_code=400, detail="Steam OpenID verification failed")
+    session: aiohttp.ClientSession = request.app.state.http
+    async with session.post(STEAM_OPENID_URL, data=check) as resp:
+        text = await resp.text()
+    if "is_valid:true" not in text:
+        raise HTTPException(status_code=400, detail="Steam OpenID verification failed")
 
-        claimed_id = qp.get("openid.claimed_id", "")
-        m = re.search(r"/openid/id/(\d+)$", claimed_id)
-        if not m:
-            raise HTTPException(status_code=400, detail="Invalid Steam OpenID response")
-        steamid64 = m.group(1)
+    claimed_id = qp.get("openid.claimed_id", "")
+    m = re.search(r"/openid/id/(\d+)$", claimed_id)
+    if not m:
+        raise HTTPException(status_code=400, detail="Invalid Steam OpenID response")
+    steamid64 = m.group(1)
 
-        player = await get_player_summary(session, steamid64)
-        request.session["steamid64"] = steamid64
-        if player:
-            request.session["personaname"] = player.get("personaname")
-            request.session["avatarfull"] = player.get("avatarfull")
+    player = await get_player_summary(session, steamid64)
+    request.session["steamid64"] = steamid64
+    if player:
+        request.session["personaname"] = player.get("personaname")
+        request.session["avatarfull"] = player.get("avatarfull")
 
     return RedirectResponse(url="/", status_code=302)
 
@@ -254,14 +268,14 @@ async def api_lookup(request: Request, payload: dict[str, Any]) -> dict[str, Any
             return cached
 
     ident, kind = _extract_steam_identifier(steam)
-    async with aiohttp.ClientSession() as session:
-        steamid64 = ident if kind == "steamid64" else await resolve_vanity_url(session, ident)
-        if not steamid64 or not _is_steamid64(steamid64):
-            raise HTTPException(status_code=400, detail="Invalid Steam link / SteamID64")
+    session: aiohttp.ClientSession = request.app.state.http
+    steamid64 = ident if kind == "steamid64" else await resolve_vanity_url(session, ident)
+    if not steamid64 or not _is_steamid64(steamid64):
+        raise HTTPException(status_code=400, detail="Invalid Steam link / SteamID64")
 
-        player = await get_player_summary(session, steamid64)
-        if not player:
-            raise HTTPException(status_code=404, detail="No data from Steam API")
+    player = await get_player_summary(session, steamid64)
+    if not player:
+        raise HTTPException(status_code=404, detail="No data from Steam API")
 
     out = {
         "steamid64": steamid64,
@@ -308,8 +322,8 @@ async def api_summaries(request: Request, payload: dict[str, Any]) -> dict[str, 
         if cached:
             return cached
 
-    async with aiohttp.ClientSession() as session:
-        players = await get_player_summaries(session, list(sorted(set(ids))))
+    session: aiohttp.ClientSession = request.app.state.http
+    players = await get_player_summaries(session, list(sorted(set(ids))))
 
     by_id: dict[str, dict[str, Any]] = {}
     for p in players:
