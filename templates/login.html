@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Steam Status — Login</title>
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body>
+    <div class="bg"></div>
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand__logo" aria-hidden="true"></div>
+        <div class="brand__text">
+          <div class="brand__title">Steam Status</div>
+          <div class="brand__sub">Вход через Steam (OpenID)</div>
+        </div>
+      </div>
+      <div class="pill" id="pill">
+        <span class="dot" id="dot"></span>
+        <span class="pill__text" id="pillText">login</span>
+      </div>
+    </header>
+
+    <main class="wrap">
+      <section class="card">
+        <h2>Нужен вход</h2>
+        <p class="muted">
+          Чтобы пользоваться сайтом, войди через свой Steam аккаунт. Без входа просмотр недоступен.
+        </p>
+        <div class="row" style="margin-top: 14px">
+          <a class="actionBtn" href="/auth/steam/login">Войти через Steam</a>
+        </div>
+        <div class="muted tiny" style="margin-top: 12px">
+          Приватность не обходится: сайт показывает только то, что Steam отдаёт через официальный Web API.
+        </div>
+      </section>
+      <section class="side">
+        <div class="hint">
+          <div class="hint__title">Зачем вход?</div>
+          <div class="muted tiny">
+            Это просто ограничение доступа. Вход делается через Steam OpenID — пароль на сайт не вводится.
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
+

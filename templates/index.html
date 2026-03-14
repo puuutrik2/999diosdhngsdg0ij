@@ -16,9 +16,20 @@
           <div class="brand__sub">Похоже на Steam, но это твой сайт</div>
         </div>
       </div>
-      <div class="pill" id="pill">
-        <span class="dot" id="dot"></span>
-        <span class="pill__text" id="pillText">ready</span>
+      <div class="topbar__right">
+        <div class="pill" id="pill">
+          <span class="dot" id="dot"></span>
+          <span class="pill__text" id="pillText">ready</span>
+        </div>
+        {% if user %}
+        <div class="me">
+          {% if user.avatarfull %}
+          <img class="me__avatar" src="{{ user.avatarfull }}" alt="me" />
+          {% endif %}
+          <a class="me__name" href="{{ user.profile_url }}" target="_blank" rel="noreferrer">{{ user.personaname or user.steamid64 }}</a>
+          <button class="btn2" id="logoutBtn" type="button">Logout</button>
+        </div>
+        {% endif %}
       </div>
     </header>
 
@@ -34,6 +45,7 @@
             autocomplete="off"
           />
           <button id="goBtn">Check</button>
+          <button class="btn2" id="addBtn" type="button" title="Добавить в список слежения">В список</button>
           <button class="btn2" id="clearBtn">Clear</button>
         </div>
 
@@ -46,18 +58,44 @@
           <label class="control" title="Интервал обновления">
             <span class="muted tiny">Интервал</span>
             <select id="intervalSelect">
+              <option value="5">5с</option>
               <option value="10">10с</option>
               <option value="15" selected>15с</option>
               <option value="20">20с</option>
+              <option value="25">25с</option>
+              <option value="30">30с</option>
+              <option value="35">35с</option>
+              <option value="40">40с</option>
+              <option value="45">45с</option>
+              <option value="50">50с</option>
+              <option value="55">55с</option>
+              <option value="60">60с</option>
             </select>
           </label>
 
           <button class="btn2" id="refreshBtn" type="button">Обновить</button>
+          <button class="btn2" id="shareBtn" type="button" title="Скопировать ссылку вида /?steam=...">Share</button>
         </div>
         <div class="meta muted tiny" id="meta"></div>
 
         <div class="result" id="result">
           <div class="empty muted">Пока пусто. Вставь ссылку и нажми Check.</div>
+        </div>
+
+        <div class="divider"></div>
+        <div class="watchTop">
+          <div class="watchTop__title">Watchlist</div>
+          <div class="watchTop__actions">
+            <button class="btn2" id="exportBtn" type="button" title="Скачать watchlist в JSON">Export</button>
+            <label class="btn2 fileBtn" title="Загрузить watchlist из JSON">
+              Import
+              <input id="importFile" type="file" accept="application/json" />
+            </label>
+            <button class="btn2" id="watchClearBtn" type="button" title="Очистить список">Очистить</button>
+          </div>
+        </div>
+        <div class="watchGrid" id="watchGrid">
+          <div class="empty muted">Список пуст. Нажми “В список”, чтобы начать следить.</div>
         </div>
       </section>
 
@@ -74,6 +112,54 @@
           </div>
           <div class="muted tiny" style="margin-top: 10px">
             Время “захода/выхода” — <b>обнаружено сайтом</b> по обновлениям (примерно), Steam точное время не отдаёт.
+          </div>
+        </div>
+
+        <div class="hint">
+          <div class="hint__title">Уведомления</div>
+          <div class="sideControls">
+            <label class="control control--toggle">
+              <input type="checkbox" id="notifToggle" />
+              <span>Браузер</span>
+            </label>
+            <label class="control control--toggle">
+              <input type="checkbox" id="soundToggle" />
+              <span>Звук</span>
+            </label>
+          </div>
+          <div class="field">
+            <div class="muted tiny">Discord webhook (опц.)</div>
+            <input id="webhookInput" placeholder="https://discord.com/api/webhooks/..." autocomplete="off" />
+            <label class="control control--toggle" style="margin-top: 8px">
+              <input type="checkbox" id="webhookToggle" />
+              <span>Отправлять в Discord</span>
+            </label>
+            <div class="muted tiny" style="margin-top: 8px">
+              Важно: webhook — это секрет. Не выкладывай его публично.
+            </div>
+          </div>
+        </div>
+
+        <div class="hint">
+          <div class="hint__title">История</div>
+          <div class="history" id="history"></div>
+          <div style="margin-top: 10px">
+            <button class="btn2" id="clearHistoryBtn" type="button">Очистить историю</button>
+          </div>
+        </div>
+
+        <div class="hint">
+          <div class="hint__title">Тема</div>
+          <div class="field">
+            <div class="muted tiny">Accent</div>
+            <input class="colorInput" id="accentColor" type="color" />
+          </div>
+          <div class="field">
+            <div class="muted tiny">Ник/игра (hot)</div>
+            <input class="colorInput" id="hotColor" type="color" />
+          </div>
+          <div style="margin-top: 10px">
+            <button class="btn2" id="resetThemeBtn" type="button">Сбросить</button>
           </div>
         </div>
       </section>

@@ -6,8 +6,11 @@
 - аватар
 - онлайн‑статус
 - во что играет (если Steam отдаёт)
+- watchlist (список слежения)
+- история событий + уведомления (когда сайт замечает изменения)
 
 Важно: сайт **не обходит приватность Steam** — показывает только то, что доступно через официальный Steam Web API.
+Вход на сайт сделан через **Steam OpenID** (без пароля на сайт).
 
 ## Запуск (Windows / PowerShell)
 
@@ -22,3 +25,10 @@ notepad .env
 
 Открыть: `http://localhost:8000/`
 
+## Хостинг (Render)
+
+- Build command: `pip install -r requirements.txt`
+- Start command: `python -m uvicorn app:app --host 0.0.0.0 --port $PORT --log-level info`
+- Environment Variables:
+  - `STEAM_API_KEY` (обязательно)
+  - `SESSION_SECRET` (желательно, любая длинная случайная строка)

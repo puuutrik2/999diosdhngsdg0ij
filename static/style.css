@@ -61,6 +61,48 @@ body {
   box-shadow: var(--shadow);
 }
 
+.topbar__right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.me {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.me__avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  object-fit: cover;
+}
+
+.me__name {
+  color: var(--steam-accent);
+  text-decoration: none;
+  font-weight: 900;
+  font-size: 12px;
+  max-width: 180px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-bottom: 1px dashed rgba(102, 192, 244, 0.45);
+}
+
+.me__name:hover {
+  border-bottom-style: solid;
+}
+
 .brand {
   display: flex;
   gap: 12px;
@@ -202,6 +244,69 @@ select {
   margin-top: 10px;
 }
 
+.fileBtn {
+  position: relative;
+  overflow: hidden;
+}
+
+.fileBtn input[type="file"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%;
+}
+
+.sideControls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.field {
+  margin-top: 10px;
+}
+
+.history {
+  margin-top: 10px;
+  display: grid;
+  gap: 8px;
+  max-height: 340px;
+  overflow: auto;
+  padding-right: 6px;
+}
+
+.historyItem {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.10);
+  padding: 10px 10px;
+}
+
+.historyTime {
+  font-size: 11px;
+  color: var(--steam-muted);
+  margin-bottom: 4px;
+}
+
+.historyText {
+  font-size: 12px;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.colorInput {
+  width: 62px;
+  height: 40px;
+  padding: 0;
+  border-radius: 12px;
+  border: 1px solid var(--steam-border);
+  background: rgba(0, 0, 0, 0.18);
+}
+
 input {
   flex: 1;
   min-width: 280px;
@@ -241,6 +346,37 @@ button:active {
   margin-top: 14px;
 }
 
+.divider {
+  height: 1px;
+  margin: 16px 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.14), transparent);
+}
+
+.watchTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.watchTop__title {
+  font-weight: 900;
+  letter-spacing: 0.2px;
+  font-size: 14px;
+}
+
+.watchTop__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.watchGrid {
+  display: grid;
+  gap: 12px;
+  margin-top: 10px;
+}
+
 .empty {
   padding: 14px;
   border-radius: 14px;
@@ -257,6 +393,23 @@ button:active {
   background: linear-gradient(180deg, rgba(24, 34, 50, 0.92), rgba(0, 0, 0, 0.18));
   position: relative;
   overflow: hidden;
+}
+
+.gameHero {
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 64px;
+  background-size: cover;
+  background-position: center;
+  opacity: 0.22;
+  pointer-events: none;
+}
+
+.gameHero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(11, 19, 30, 0.75), rgba(11, 19, 30, 0.15), transparent);
 }
 
 .profile.appear {
@@ -466,6 +619,11 @@ button:active {
 .actionBtn2 {
   border-color: rgba(255, 77, 77, 0.40);
   background: linear-gradient(180deg, rgba(255, 77, 77, 0.16), rgba(255, 77, 77, 0.08));
+}
+
+.actionBtnDanger {
+  border-color: rgba(255, 93, 122, 0.46);
+  background: linear-gradient(180deg, rgba(255, 93, 122, 0.16), rgba(255, 93, 122, 0.08));
 }
 
 .badge {
